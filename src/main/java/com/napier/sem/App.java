@@ -27,8 +27,16 @@ public class App
             {
                 // Wait a bit for db to start
                 Thread.sleep(1000);
+
                 // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
+                // LOCAL (IntelliJ on Windows): localhost:33060
+                // DOCKER (compose network):     db:3306
+                con = DriverManager.getConnection(
+                        "jdbc:mysql://localhost:33060/world?useSSL=false&allowPublicKeyRetrieval=true",
+                        "root",
+                        "example"
+                );
+
                 System.out.println("Successfully connected");
                 // Wait a bit
                 Thread.sleep(1000);
@@ -50,6 +58,10 @@ public class App
         {
             try
             {
+                // >>> US07 - View all cities in the world
+                ViewAllCitiesInTheWorld us07 = new ViewAllCitiesInTheWorld(con);
+                us07.getAllCitiesInWorld();
+
                 // Close connection
                 con.close();
             }
