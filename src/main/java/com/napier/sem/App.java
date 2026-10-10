@@ -25,14 +25,18 @@ public class App
             System.out.println("Connecting to database...");
             try
             {
-                // Wait a bit for db to start
                 Thread.sleep(1000);
-                // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
+
+                // LOCAL (IntelliJ): localhost:33060
+                // DOCKER (compose): db:3306
+                con = DriverManager.getConnection(
+                        "jdbc:mysql://localhost:33060/world?useSSL=false&allowPublicKeyRetrieval=true",
+                        "root",
+                        "example"
+                );
+
                 System.out.println("Successfully connected");
-                // Wait a bit
                 Thread.sleep(1000);
-                // Exit for loop
                 break;
             }
             catch (SQLException sqle)
@@ -50,6 +54,10 @@ public class App
         {
             try
             {
+                // >>> US08 - View all cities in a continent
+                ViewCitiesinaContinent us08 = new ViewCitiesinaContinent(con);
+                us08.getCitiesInContinent("Asia");
+
                 // Close connection
                 con.close();
             }
