@@ -1,6 +1,7 @@
 package com.napier.sem;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 public class App
 {
@@ -50,13 +51,26 @@ public class App
         {
             try
             {
+                // Specify the continent you want to query
+                String continent = "Europe";
+
+                // US18: Capital cities in a continent by population
+                ArrayList<CapitalCity> capitalCities = CapitalCitiesInAcontinent.getCapitalCitiesByContinent(con, continent);
+                CapitalCitiesInAcontinent.printReport(capitalCities, continent);
+
                 // Close connection
                 con.close();
+                System.out.println("Successfully disconnected from database.");
             }
             catch (Exception e)
             {
-                System.out.println("Error closing connection to database");
+                System.out.println("Error closing connection to database or executing report");
+                e.printStackTrace();
             }
+        }
+        else
+        {
+            System.out.println("Failed to establish a database connection.");
         }
     }
 }
