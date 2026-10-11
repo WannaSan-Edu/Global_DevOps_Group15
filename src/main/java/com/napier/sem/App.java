@@ -1,3 +1,4 @@
+
 package com.napier.sem;
 
 import java.sql.*;
@@ -6,57 +7,100 @@ public class App
 {
     public static void main(String[] args)
     {
+        // Load MySQL database driver
         try
         {
-            // Load Database driver
             Class.forName("com.mysql.cj.jdbc.Driver");
         }
         catch (ClassNotFoundException e)
         {
             System.out.println("Could not load SQL driver");
+            e.printStackTrace();
             System.exit(-1);
         }
 
-        // Connection to the database
+        // Get district name from command-line arguments
+        String districtName =
+                args.length > 0 ? String.join(" ", args).trim() : "";
+
+        // Use environment variables when provided.
+        // Default URL is for running directly from IntelliJ on Windows.
+        String dbUrl = System.getenv().getOrDefault(
+                "DB_URL",
+                "jdbc:mysql://localhost:33060/world?useSSL=false&allowPublicKeyRetrieval=true"
+        );
+
+        String dbUser = System.getenv().getOrDefault(
+                "DB_USER",
+                "root"
+        );
+
+        String dbPassword = System.getenv().getOrDefault(
+                "DB_PASSWORD",
+                "example"
+        );
+
+        System.out.println("Database URL: " + dbUrl);
+        System.out.println("Database user: " + dbUser);
+
+        // Connect to the database, retrying while it starts
         Connection con = null;
         int retries = 100;
-        for (int i = 0; i < retries; ++i)
+
+        for (int i = 0; i < retries; i++)
         {
             System.out.println("Connecting to database...");
+
             try
             {
-                // Wait a bit for db to start
                 Thread.sleep(1000);
-                // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
+
+                con = DriverManager.getConnection(
+                        dbUrl,
+                        dbUser,
+                        dbPassword
+                );
+
                 System.out.println("Successfully connected");
-                // Wait a bit
-                Thread.sleep(1000);
-                // Exit for loop
                 break;
             }
-            catch (SQLException sqle)
+            catch (SQLException e)
             {
-                System.out.println("Failed to connect to database attempt " + Integer.toString(i));
-                System.out.println(sqle.getMessage());
+                System.out.println(
+                        "Failed to connect to database attempt "
+                                + (i + 1)
+                );
+                System.out.println(e.getMessage());
             }
-            catch (InterruptedException ie)
+            catch (InterruptedException e)
             {
-                System.out.println("Thread interrupted? Should not happen.");
+                Thread.currentThread().interrupt();
+                System.out.println("Database connection interrupted.");
+                return;
             }
         }
 
-        if (con != null)
+        if (con == null)
         {
-            try
-            {
-                // Close connection
-                con.close();
-            }
-            catch (Exception e)
-            {
-                System.out.println("Error closing connection to database");
-            }
+            System.out.println(
+                    "Could not connect to the database after "
+                            + retries + " attempts."
+            );
+            return;
+        }
+
+        // Run District Population Report
+        try (Connection connection = con)
+        {
+            DistrictPopulationReport report =
+                    new DistrictPopulationReport(connection);
+
+            report.run(districtName);
+        }
+        catch (SQLException e)
+        {
+            System.out.println("Error running district population report");
+            e.printStackTrace();
         }
     }
 }
