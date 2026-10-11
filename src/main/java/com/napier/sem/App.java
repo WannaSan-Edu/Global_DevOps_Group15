@@ -1,14 +1,50 @@
 package com.napier.sem;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
+/**
+ * Entry point for Group 15 population reports.
+ */
 public class App
 {
+    /**
+     * Connection to the MySQL world database.
+     */
+    private Connection con = null;
+
     public static void main(String[] args)
+    {
+        App app = new App();
+
+        // Docker Compose uses host "db"; local IntelliJ uses localhost:33060.
+        if (args.length < 1)
+        {
+            app.connect("localhost:33060");
+        }
+        else
+        {
+            app.connect(args[0]);
+        }
+
+        // Call the separate class to fetch data and print the report
+        ArrayList<Population> countryPopulations = ViewPopulationByCountry.getPopulationByCountry(app.con);
+        ViewPopulationByCountry.printReport(countryPopulations);
+
+        app.disconnect();
+    }
+
+    /**
+     * Connect to the world database.
+     *
+     * @param location Host and port, for example localhost:33060 or db:3306
+     */
+    public void connect(String location)
     {
         try
         {
-            // Load Database driver
             Class.forName("com.mysql.cj.jdbc.Driver");
         }
         catch (ClassNotFoundException e)
@@ -17,27 +53,23 @@ public class App
             System.exit(-1);
         }
 
-        // Connection to the database
-        Connection con = null;
-        int retries = 100;
+        int retries = 10;
         for (int i = 0; i < retries; ++i)
         {
             System.out.println("Connecting to database...");
             try
             {
-                // Wait a bit for db to start
                 Thread.sleep(1000);
-                // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
+                con = DriverManager.getConnection(
+                        "jdbc:mysql://" + location + "/world?allowPublicKeyRetrieval=true&useSSL=false",
+                        "root",
+                        "example");
                 System.out.println("Successfully connected");
-                // Wait a bit
-                Thread.sleep(1000);
-                // Exit for loop
-                break;
+                return;
             }
             catch (SQLException sqle)
             {
-                System.out.println("Failed to connect to database attempt " + Integer.toString(i));
+                System.out.println("Failed to connect to database attempt " + i);
                 System.out.println(sqle.getMessage());
             }
             catch (InterruptedException ie)
@@ -45,13 +77,22 @@ public class App
                 System.out.println("Thread interrupted? Should not happen.");
             }
         }
+    }
 
+    /**
+     * Close the database connection.
+     */
+    public void disconnect()
+    {
         if (con != null)
         {
+
+            ArrayList<Population> countryPopulations = ViewPopulationByCountry.getPopulationByCountry(con);
+            ViewPopulationByCountry.printReport(countryPopulations);
             try
             {
-                // Close connection
                 con.close();
+                System.out.println("Successfully disconnected from database.");
             }
             catch (Exception e)
             {
