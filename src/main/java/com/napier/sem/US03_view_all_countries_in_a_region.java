@@ -29,8 +29,6 @@ public class US03_view_all_countries_in_a_region {
     public static void main(String[] args) {
 
         List<Country> countries = new ArrayList<>();
-
-        // Sample country data
         countries.add(new Country(
                 "CHN", "China", "Asia",
                 "Eastern Asia", 1400000000L, "Peking"));
@@ -65,7 +63,6 @@ public class US03_view_all_countries_in_a_region {
 
         Scanner scanner = new Scanner(System.in);
 
-        // Display available regions
         System.out.println("Available Regions:");
         System.out.println("1. Eastern Asia");
         System.out.println("2. Southern and Central Asia");
@@ -83,7 +80,6 @@ public class US03_view_all_countries_in_a_region {
             }
         }
 
-        // Sort by population from largest to smallest
         selectedCountries.sort(
                 Comparator.comparingLong(
                         (Country country) -> country.population
