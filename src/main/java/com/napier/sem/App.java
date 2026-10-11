@@ -1,6 +1,7 @@
 package com.napier.sem;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 public class App
 {
@@ -50,13 +51,25 @@ public class App
         {
             try
             {
+                // Extract all capital cities in the world using US17 implementation
+                ArrayList<CapitalCity> capitalCities = AllCapitalsCitiesInTheWorld_US17.getAll(con);
+
+                // Print out the report
+                AllCapitalsCitiesInTheWorld_US17.printReport(capitalCities);
+
                 // Close connection
                 con.close();
+                System.out.println("Successfully disconnected from database.");
             }
             catch (Exception e)
             {
-                System.out.println("Error closing connection to database");
+                System.out.println("Error closing connection to database or executing report");
+                e.printStackTrace();
             }
+        }
+        else
+        {
+            System.out.println("Failed to establish a database connection.");
         }
     }
 }
