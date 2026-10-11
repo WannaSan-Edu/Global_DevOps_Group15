@@ -1,15 +1,19 @@
+services:
+  app:
+    build: .
+    environment:
+      DB_HOST: db:3306
+    depends_on:
+      db:
+        condition: service_healthy
 
-  version: '3'
-  services:
-
-    # Build app from Dockerfile in same folder
-    app:
-      build: .
-
-    # Build the db as name db from the Dockerfile in the db folder
-    # exposing the port if we want to run code outside a container
-    db:
-      build: db/.
-      ports:
-        - "33060:3306"
-
+  db:
+    build: ./db
+    ports:
+      - "33060:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
