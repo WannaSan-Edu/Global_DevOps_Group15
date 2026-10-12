@@ -85,7 +85,7 @@ public class App {
             if (mode.equals("district")) {
                 new DistrictPopulationReport(connection).run(name);
             } else {
-                new CountryPopulationReport(connection).run(name);
+                new DistrictPopulationReport(connection).run(name);
             }
 
         } catch (SQLException e) {
