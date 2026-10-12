@@ -26,7 +26,6 @@ public class US01_view_all_countries_in_the_world {
 
         List<Country> countries = new ArrayList<>();
 
-        // Sample country data
         countries.add(new Country("China", "Asia", "Eastern Asia", 1400000000L));
         countries.add(new Country("India", "Asia", "Southern and Central Asia", 1380000000L));
         countries.add(new Country("United States", "North America", "North America", 331000000L));
@@ -35,14 +34,12 @@ public class US01_view_all_countries_in_the_world {
         countries.add(new Country("United Kingdom", "Europe", "British Islands", 67000000L));
         countries.add(new Country("Myanmar", "Asia", "Southeast Asia", 54000000L));
 
-        // Sort by population, highest first
         countries.sort(
                 Comparator.comparingLong(
                         (Country country) -> country.population
                 ).reversed()
         );
 
-        // Display table
         String line = "|---------------------------------------------------------------------------------|";
 
         System.out.println(line);
