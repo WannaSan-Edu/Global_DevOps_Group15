@@ -1,3 +1,4 @@
+
 package com.napier.sem;
 
 import java.sql.Connection;
@@ -5,98 +6,116 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-/**
- * Entry point for Group 15 population reports.
- */
 public class App
 {
-    /**
-     * Connection to the MySQL world database.
-     */
     private Connection con = null;
 
     public static void main(String[] args)
     {
         App app = new App();
 
-        // Docker Compose uses host "db"; local IntelliJ uses localhost:33060.
-        if (args.length < 1)
-        {
-            app.connect("localhost:33060");
-        }
-        else
-        {
-            app.connect(args[0]);
-        }
+        // Default host port for a locally running application.
+        String location = args.length > 0
+                ? args[0]
+                : "localhost:33060";
 
-        // Call the separate class to fetch data and print the report
-        ArrayList<Population> countryPopulations = ViewPopulationByCountry.getPopulationByCountry(app.con);
-        ViewPopulationByCountry.printReport(countryPopulations);
+        try
+        {
+            app.connect(location);
 
-        app.disconnect();
+            if (app.con == null)
+            {
+                System.err.println(
+                        "US25 failed: Could not connect to the database.");
+                return;
+            }
+
+            ArrayList<Population> populations =
+                    ViewPopulationByCountry.getPopulationByCountry(app.con);
+
+            ViewPopulationByCountry.printReport(populations);
+        }
+        finally
+        {
+            app.disconnect();
+        }
     }
 
-    /**
-     * Connect to the world database.
-     *
-     * @param location Host and port, for example localhost:33060 or db:3306
-     */
     public void connect(String location)
     {
+        String url = "jdbc:mysql://" + location
+                + "/world?allowPublicKeyRetrieval=true&useSSL=false";
+
+        String username = "root";
+        String password = "example";
+
         try
         {
             Class.forName("com.mysql.cj.jdbc.Driver");
+
+            int maxAttempts = 10;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    System.out.println(
+                            "Connecting to database (attempt "
+                                    + attempt + "/" + maxAttempts + ")...");
+
+                    con = DriverManager.getConnection(
+                            url, username, password);
+
+                    System.out.println(
+                            "Database connected successfully.");
+
+                    return;
+                }
+                catch (SQLException e)
+                {
+                    System.err.println(
+                            "Connection attempt failed: " + e.getMessage());
+
+                    if (attempt < maxAttempts)
+                    {
+                        Thread.sleep(1000);
+                    }
+                }
+            }
+
+            System.err.println(
+                    "Unable to connect after " + maxAttempts + " attempts.");
         }
         catch (ClassNotFoundException e)
         {
-            System.out.println("Could not load SQL driver");
-            System.exit(-1);
+            System.err.println(
+                    "MySQL JDBC driver is missing. Check pom.xml.");
         }
-
-        int retries = 10;
-        for (int i = 0; i < retries; ++i)
+        catch (InterruptedException e)
         {
-            System.out.println("Connecting to database...");
-            try
-            {
-                Thread.sleep(1000);
-                con = DriverManager.getConnection(
-                        "jdbc:mysql://" + location + "/world?allowPublicKeyRetrieval=true&useSSL=false",
-                        "root",
-                        "example");
-                System.out.println("Successfully connected");
-                return;
-            }
-            catch (SQLException sqle)
-            {
-                System.out.println("Failed to connect to database attempt " + i);
-                System.out.println(sqle.getMessage());
-            }
-            catch (InterruptedException ie)
-            {
-                System.out.println("Thread interrupted? Should not happen.");
-            }
+            Thread.currentThread().interrupt();
+            System.err.println("Database connection interrupted.");
         }
     }
 
-    /**
-     * Close the database connection.
-     */
     public void disconnect()
     {
         if (con != null)
         {
-
-            ArrayList<Population> countryPopulations = ViewPopulationByCountry.getPopulationByCountry(con);
-            ViewPopulationByCountry.printReport(countryPopulations);
             try
             {
                 con.close();
-                System.out.println("Successfully disconnected from database.");
+                System.out.println("Database connection closed.");
             }
-            catch (Exception e)
+            catch (SQLException e)
             {
-                System.out.println("Error closing connection to database");
+                System.err.println(
+                        "Error closing database connection: "
+                                + e.getMessage());
+            }
+            finally
+            {
+                con = null;
             }
         }
     }
