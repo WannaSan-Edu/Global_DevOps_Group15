@@ -60,12 +60,8 @@ public class App {
                 // US19: Capital cities in a region by population
                 ArrayList<CapitalCity> capitalCities = CapitalsCitiesInAregion.getCapitalCitiesByRegion(con, region);
                 CapitalsCitiesInAregion.printReport(capitalCities, region);
-
-                // Close connection
-                con.close();
-                System.out.println("Successfully disconnected from database.");
             } catch (Exception e) {
-                System.out.println("Error closing connection to database or executing report");
+                System.out.println("Error executing region capital cities report");
                 e.printStackTrace();
             }
 
@@ -77,7 +73,7 @@ public class App {
                 ArrayList<CapitalCity> capitalCities = CapitalCitiesInAcontinent.getCapitalCitiesByContinent(con, continent);
                 CapitalCitiesInAcontinent.printReport(capitalCities, continent);
             } catch (Exception e) {
-                System.out.println("Error executing capital cities report");
+                System.out.println("Error executing continent capital cities report");
                 e.printStackTrace();
             }
 
@@ -86,6 +82,7 @@ public class App {
                         new CountryPopulationReport(connection);
 
                 report.run(countryName);
+                System.out.println("Successfully disconnected from database.");
 
             } catch (SQLException e) {
                 System.err.println("Error closing database connection.");
