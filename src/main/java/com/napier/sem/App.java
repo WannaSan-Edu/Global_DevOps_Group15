@@ -1,124 +1,105 @@
-
 package com.napier.sem;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.sql.*;
+import java.util.ArrayList;
 
+public class App {
 
-public class App
-{
-    private Connection con = null;
+    public static void main(String[] args) {
 
-    public static void main(String[] args)
-    {
-        App app = new App();
-
-        // Default host port for a locally running application.
-        String location = args.length > 0
-                ? args[0]
-                : "localhost:33060";
-
-        try
-        {
-            app.connect(location);
-
-            if (app.con == null)
-            {
-                System.err.println(
-                        "US25 failed: Could not connect to the database.");
-                return;
-            }
-
-            ArrayList<Population> populations =
-                    ViewPopulationByCountry.getPopulationByCountry(app.con);
-
-            ViewPopulationByCountry.printReport(populations);
-        }
-        finally
-        {
-            app.disconnect();
-        }
-    }
-
-    public void connect(String location)
-    {
-        String url = "jdbc:mysql://" + location
-                + "/world?allowPublicKeyRetrieval=true&useSSL=false";
-
-        String username = "root";
-        String password = "example";
-
-        try
-        {
+        // Load MySQL JDBC driver.
+        try {
             Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            System.err.println("Could not load MySQL JDBC driver.");
+            return;
+        }
 
-            int maxAttempts = 10;
+        // District name is optional.
+        // No arguments: show the district report for all districts.
+        // Example: Ontario
+        String districtName =
+                args.length > 0 ? String.join(" ", args).trim() : "";
 
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
-            {
-                try
-                {
-                    System.out.println(
-                            "Connecting to database (attempt "
-                                    + attempt + "/" + maxAttempts + ")...");
+        // Database configuration.
+        // Docker uses DB_URL, DB_USER and DB_PASSWORD.
+        // Defaults are for running directly from IntelliJ.
+        String dbUrl = System.getenv().getOrDefault(
+                "DB_URL",
+                "jdbc:mysql://localhost:33060/world"
+                        + "?useSSL=false&allowPublicKeyRetrieval=true"
+        );
 
-                    con = DriverManager.getConnection(
-                            url, username, password);
+        String dbUser = System.getenv().getOrDefault(
+                "DB_USER", "root"
+        );
 
-                    System.out.println(
-                            "Database connected successfully.");
+        String dbPassword = System.getenv().getOrDefault(
+                "DB_PASSWORD", "example"
+        );
 
+        Connection con = null;
+
+        // Retry the database connection while MySQL starts.
+        for (int i = 0; i < 100; i++) {
+            System.out.println("Connecting to database...");
+
+            try {
+                con = DriverManager.getConnection(
+                        dbUrl, dbUser, dbPassword
+                );
+
+                System.out.println("Successfully connected.");
+                break;
+
+            } catch (SQLException e) {
+                System.err.println(
+                        "Database connection attempt " + (i + 1)
+                                + " failed: " + e.getMessage()
+                );
+
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.err.println(
+                            "Database connection was interrupted."
+                    );
                     return;
                 }
-                catch (SQLException e)
-                {
-                    System.err.println(
-                            "Connection attempt failed: " + e.getMessage());
-
-                    if (attempt < maxAttempts)
-                    {
-                        Thread.sleep(1000);
-                    }
-                }
             }
+        }
 
+        if (con == null) {
             System.err.println(
-                    "Unable to connect after " + maxAttempts + " attempts.");
+                    "Could not connect to the database after 100 attempts."
+            );
+            return;
         }
-        catch (ClassNotFoundException e)
-        {
-            System.err.println(
-                    "MySQL JDBC driver is missing. Check pom.xml.");
-        }
-        catch (InterruptedException e)
-        {
-            Thread.currentThread().interrupt();
-            System.err.println("Database connection interrupted.");
-        }
-    }
 
-    public void disconnect()
-    {
-        if (con != null)
-        {
-            try
-            {
-                con.close();
-                System.out.println("Database connection closed.");
-            }
-            catch (SQLException e)
-            {
-                System.err.println(
-                        "Error closing database connection: "
-                                + e.getMessage());
-            }
-            finally
-            {
-                con = null;
-            }
+        try {
+            // Extract all capital cities in the world using US17 implementation
+            ArrayList<CapitalCity> capitalCities = AllCapitalsCitiesInTheWorld_US17.getAll(con);
+
+            // Print out the report
+            AllCapitalsCitiesInTheWorld_US17.printReport(capitalCities);
+        } catch (Exception e) {
+            System.out.println("Error executing capital cities report");
+            e.printStackTrace();
+        }
+
+        // Run the district population report only.
+        try (Connection connection = con) {
+            DistrictPopulationReport report =
+                    new DistrictPopulationReport(connection);
+
+            report.run(districtName);
+
+        } catch (Exception e) {
+            System.err.println(
+                    "Error executing district population report."
+            );
+            e.printStackTrace();
         }
     }
 }
