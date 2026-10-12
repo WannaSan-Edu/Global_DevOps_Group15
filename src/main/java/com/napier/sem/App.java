@@ -1,14 +1,15 @@
 package com.napier.sem;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.ArrayList;
 
-public class App {
-
-    public static void main(String[] args) {
-
-        try {
+public class App
+{
+    public static void main(String[] args)
+    {
+        try
+        {
+            // Load Database driver
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
             System.err.println("Could not load MySQL JDBC driver.");
@@ -53,6 +54,26 @@ public class App {
             }
         }
 
+        if (con != null)
+        {
+            try
+            {
+                // Specify the continent you want to query
+                String continent = "Europe";
+
+                // US18: Capital cities in a continent by population
+                ArrayList<CapitalCity> capitalCities = CapitalCitiesInAcontinent.getCapitalCitiesByContinent(con, continent);
+                CapitalCitiesInAcontinent.printReport(capitalCities, continent);
+
+                // Close connection
+                con.close();
+                System.out.println("Successfully disconnected from database.");
+            }
+            catch (Exception e)
+            {
+                System.out.println("Error closing connection to database or executing report");
+                e.printStackTrace();
+            }
         if (con == null) {
             System.err.println(
                     "Could not connect to the database after 100 attempts."
@@ -68,6 +89,10 @@ public class App {
 
         } catch (SQLException e) {
             System.err.println("Error closing database connection.");
+        }
+        else
+        {
+            System.out.println("Failed to establish a database connection.");
         }
     }
 }
