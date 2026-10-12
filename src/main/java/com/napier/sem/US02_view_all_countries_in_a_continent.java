@@ -3,7 +3,8 @@ package com.napier.sem;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Scanner;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class US02_view_all_countries_in_a_continent {
 
@@ -32,64 +33,77 @@ public class US02_view_all_countries_in_a_continent {
         countries.add(new Country(
                 "India", "Asia", "Southern and Central Asia", 1380000000L));
         countries.add(new Country(
-                "United States", "North America", "North America", 331000000L));
-        countries.add(new Country(
                 "Indonesia", "Asia", "Southeast Asia", 273000000L));
-        countries.add(new Country(
-                "Brazil", "South America", "South America", 212000000L));
-        countries.add(new Country(
-                "United Kingdom", "Europe", "British Islands", 67000000L));
         countries.add(new Country(
                 "Myanmar", "Asia", "Southeast Asia", 54000000L));
 
-        Scanner scanner = new Scanner(System.in);
+        countries.add(new Country(
+                "United States", "North America",
+                "North America", 331000000L));
+        countries.add(new Country(
+                "Canada", "North America",
+                "North America", 38000000L));
 
-        // Display available continents
-        System.out.println("Available Continents:");
-        System.out.println("1. Asia");
-        System.out.println("2. Europe");
-        System.out.println("3. North America");
-        System.out.println("4. South America");
-        System.out.println("5. Africa");
-        System.out.println("6. Oceania");
+        countries.add(new Country(
+                "Brazil", "South America",
+                "South America", 212000000L));
+        countries.add(new Country(
+                "Argentina", "South America",
+                "South America", 45000000L));
 
-        System.out.print("Select a continent: ");
-        String selectedContinent = scanner.nextLine().trim();
+        countries.add(new Country(
+                "United Kingdom", "Europe",
+                "British Islands", 67000000L));
+        countries.add(new Country(
+                "Germany", "Europe",
+                "Western Europe", 83000000L));
 
-        // Filter countries by selected continent
-        List<Country> selectedCountries = new ArrayList<>();
+        countries.add(new Country(
+                "Nigeria", "Africa",
+                "Western Africa", 206000000L));
+        countries.add(new Country(
+                "Egypt", "Africa",
+                "Northern Africa", 102000000L));
+
+        countries.add(new Country(
+                "Australia", "Oceania",
+                "Australia and New Zealand", 25600000L));
+        countries.add(new Country(
+                "New Zealand", "Oceania",
+                "Australia and New Zealand", 5000000L));
+
+        // Group countries by continent
+        Map<String, List<Country>> continentMap = new TreeMap<>();
 
         for (Country country : countries) {
-            if (country.continent.equalsIgnoreCase(selectedContinent)) {
-                selectedCountries.add(country);
-            }
+            continentMap.computeIfAbsent(
+                    country.continent,
+                    key -> new ArrayList<>()
+            ).add(country);
         }
 
-        // Sort population from largest to smallest
-        selectedCountries.sort(
-                Comparator.comparingLong(
-                        (Country country) -> country.population
-                ).reversed()
-        );
+        // Sort countries within each continent
+        for (List<Country> continentCountries : continentMap.values()) {
+            continentCountries.sort(
+                    Comparator.comparingLong(
+                            (Country country) -> country.population
+                    ).reversed()
+            );
+        }
 
-        // Display results
+        // Display countries for every continent
         String line =
                 "|---------------------------------------------------------------------------------|";
 
-        if (selectedCountries.isEmpty()) {
-            System.out.println(
-                    "No country data is available for continent: "
-                            + selectedContinent);
-        } else {
-            System.out.println();
-            System.out.println(
-                    "Countries in " + selectedContinent
-                            + " sorted by population (largest to smallest)");
+        for (Map.Entry<String, List<Country>> entry
+                : continentMap.entrySet()) {
 
+            System.out.println();
+            System.out.println("Continent: " + entry.getKey());
             System.out.println(line);
 
             System.out.printf(
-                    "| %-20s | %-15s | %-26s | %15s |%n",
+                    "| %-20s | %-18s | %-26s | %15s |%n",
                     "Country Name",
                     "Continent",
                     "Region",
@@ -98,9 +112,9 @@ public class US02_view_all_countries_in_a_continent {
 
             System.out.println(line);
 
-            for (Country country : selectedCountries) {
+            for (Country country : entry.getValue()) {
                 System.out.printf(
-                        "| %-20s | %-15s | %-26s | %,15d |%n",
+                        "| %-20s | %-18s | %-26s | %,15d |%n",
                         country.name,
                         country.continent,
                         country.region,
@@ -111,6 +125,8 @@ public class US02_view_all_countries_in_a_continent {
             System.out.println(line);
         }
 
-        scanner.close();
+        if (countries.isEmpty()) {
+            System.out.println("No country data is available.");
+        }
     }
 }
