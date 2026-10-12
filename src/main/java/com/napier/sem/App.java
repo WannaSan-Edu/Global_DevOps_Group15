@@ -11,39 +11,46 @@ public class App
         {
             // Load Database driver
             Class.forName("com.mysql.cj.jdbc.Driver");
-        }
-        catch (ClassNotFoundException e)
-        {
-            System.out.println("Could not load SQL driver");
-            System.exit(-1);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Could not load MySQL JDBC driver.");
+            return;
         }
 
-        // Connection to the database
+        // No argument -> empty string -> show all countries.
+        // With argument -> show only that country.
+        String countryName =
+                args.length > 0 ? String.join(" ", args).trim() : "";
+
+        String host = System.getenv().getOrDefault("DB_HOST", "127.0.0.1:33060");
+        String url = "jdbc:mysql://" + host
+                + "/world?useSSL=false&allowPublicKeyRetrieval=true";
+
+        String username = "root";
+        String password = "example";
+
         Connection con = null;
-        int retries = 100;
-        for (int i = 0; i < retries; ++i)
-        {
+
+        for (int i = 0; i < 100; i++) {
             System.out.println("Connecting to database...");
-            try
-            {
-                // Wait a bit for db to start
-                Thread.sleep(1000);
-                // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
-                System.out.println("Successfully connected");
-                // Wait a bit
-                Thread.sleep(1000);
-                // Exit for loop
+
+            try {
+                con = DriverManager.getConnection(url, username, password);
+                System.out.println("Successfully connected.");
                 break;
-            }
-            catch (SQLException sqle)
-            {
-                System.out.println("Failed to connect to database attempt " + Integer.toString(i));
-                System.out.println(sqle.getMessage());
-            }
-            catch (InterruptedException ie)
-            {
-                System.out.println("Thread interrupted? Should not happen.");
+
+            } catch (SQLException e) {
+                System.err.println(
+                        "Database connection attempt " + (i + 1)
+                                + " failed: " + e.getMessage()
+                );
+
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Database connection was interrupted.");
+                    return;
+                }
             }
         }
 
@@ -67,6 +74,21 @@ public class App
                 System.out.println("Error closing connection to database or executing report");
                 e.printStackTrace();
             }
+        if (con == null) {
+            System.err.println(
+                    "Could not connect to the database after 100 attempts."
+            );
+            return;
+        }
+
+        try (Connection connection = con) {
+            CountryPopulationReport report =
+                    new CountryPopulationReport(connection);
+
+            report.run(countryName);
+
+        } catch (SQLException e) {
+            System.err.println("Error closing database connection.");
         }
         else
         {
