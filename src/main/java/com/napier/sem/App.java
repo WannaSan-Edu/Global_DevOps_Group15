@@ -70,36 +70,34 @@ public class App {
             }
         }
 
-        if (con == null) {
-            System.err.println(
-                    "Could not connect to the database after 100 attempts."
-            );
-            return;
+
+        if (con != null)
+        {
+            try
+            {
+                // Generate the US26 report.
+                TotalWorldPopulation.printReport(con);
+            }
+            finally
+            {
+                // Close the database connection after generating the report.
+                try
+                {
+                    con.close();
+                    System.out.println("Database connection closed.");
+                }
+                catch (SQLException e)
+                {
+                    System.out.println("Error closing connection to database.");
+                    System.out.println(e.getMessage());
+                }
+            }
         }
-
-        try {
-            // Extract all capital cities in the world using US17 implementation
-            ArrayList<CapitalCity> capitalCities = AllCapitalsCitiesInTheWorld_US17.getAll(con);
-
-            // Print out the report
-            AllCapitalsCitiesInTheWorld_US17.printReport(capitalCities);
-        } catch (Exception e) {
-            System.out.println("Error executing capital cities report");
-            e.printStackTrace();
-        }
-
-        // Run the district population report only.
-        try (Connection connection = con) {
-            DistrictPopulationReport report =
-                    new DistrictPopulationReport(connection);
-
-            report.run(districtName);
-
-        } catch (Exception e) {
-            System.err.println(
-                    "Error executing district population report."
-            );
-            e.printStackTrace();
+        else
+        {
+            System.out.println(
+                    "Unable to generate Total World Population Report: " +
+                            "could not connect to the database.");
         }
     }
 }
