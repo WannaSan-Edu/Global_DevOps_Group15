@@ -1,105 +1,95 @@
-
 package com.napier.sem;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Arrays;
 
-public class App
-{
-    public static void main(String[] args)
-    {
+public class App {
+
+    public static void main(String[] args) {
+
         // Load MySQL database driver
-        try
-        {
+        try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-        }
-        catch (ClassNotFoundException e)
-        {
-            System.out.println("Could not load SQL driver");
-            e.printStackTrace();
-            System.exit(-1);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Could not load MySQL JDBC driver.");
+            return;
         }
 
-        // Get district name from command-line arguments
-        String districtName =
-                args.length > 0 ? String.join(" ", args).trim() : "";
+        // Usage: [country|district] [name...]
+        // No arguments -> country report for all countries.
+        String mode = "country";
+        String name = "";
+
+        if (args.length > 0) {
+            if (args[0].equalsIgnoreCase("district")
+                    || args[0].equalsIgnoreCase("country")) {
+                mode = args[0].toLowerCase();
+                name = String.join(" ",
+                        Arrays.copyOfRange(args, 1, args.length)).trim();
+            } else {
+                name = String.join(" ", args).trim();
+            }
+        }
 
         // Use environment variables when provided.
-        // Default URL is for running directly from IntelliJ on Windows.
+        // Defaults are for running directly from IntelliJ.
         String dbUrl = System.getenv().getOrDefault(
                 "DB_URL",
                 "jdbc:mysql://localhost:33060/world?useSSL=false&allowPublicKeyRetrieval=true"
         );
-
-        String dbUser = System.getenv().getOrDefault(
-                "DB_USER",
-                "root"
-        );
-
-        String dbPassword = System.getenv().getOrDefault(
-                "DB_PASSWORD",
-                "example"
-        );
+        String dbUser = System.getenv().getOrDefault("DB_USER", "root");
+        String dbPassword = System.getenv().getOrDefault("DB_PASSWORD", "example");
 
         System.out.println("Database URL: " + dbUrl);
         System.out.println("Database user: " + dbUser);
 
         // Connect to the database, retrying while it starts
         Connection con = null;
-        int retries = 100;
 
-        for (int i = 0; i < retries; i++)
-        {
+        for (int i = 0; i < 100; i++) {
             System.out.println("Connecting to database...");
 
-            try
-            {
-                Thread.sleep(1000);
-
-                con = DriverManager.getConnection(
-                        dbUrl,
-                        dbUser,
-                        dbPassword
-                );
-
-                System.out.println("Successfully connected");
+            try {
+                con = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
+                System.out.println("Successfully connected.");
                 break;
-            }
-            catch (SQLException e)
-            {
-                System.out.println(
-                        "Failed to connect to database attempt "
-                                + (i + 1)
+
+            } catch (SQLException e) {
+                System.err.println(
+                        "Database connection attempt " + (i + 1)
+                                + " failed: " + e.getMessage()
                 );
-                System.out.println(e.getMessage());
-            }
-            catch (InterruptedException e)
-            {
-                Thread.currentThread().interrupt();
-                System.out.println("Database connection interrupted.");
-                return;
+
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    System.err.println("Database connection was interrupted.");
+                    return;
+                }
             }
         }
 
-        if (con == null)
-        {
-            System.out.println(
-                    "Could not connect to the database after "
-                            + retries + " attempts."
+        if (con == null) {
+            System.err.println(
+                    "Could not connect to the database after 100 attempts."
             );
             return;
         }
 
-        // Run District Population Report
-        try (Connection connection = con)
-        {
-            DistrictPopulationReport report =
-                    new DistrictPopulationReport(connection);
+        // Run the selected report
+        try (Connection connection = con) {
 
-            report.run(districtName);
-        }
-        catch (SQLException e)
-        {
-            System.out.println("Error running district population report");
+            if (mode.equals("district")) {
+                new DistrictPopulationReport(connection).run(name);
+            } else {
+                new CountryPopulationReport(connection).run(name);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error running report or closing connection.");
             e.printStackTrace();
         }
     }

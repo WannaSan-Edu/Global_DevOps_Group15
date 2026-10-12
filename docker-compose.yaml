@@ -1,3 +1,11 @@
+services:
+  app:
+    build: .
+    environment:
+      DB_HOST: db:3306
+    depends_on:
+      db:
+        condition: service_healthy
 
 services:
   app:
@@ -11,6 +19,12 @@ services:
         condition: service_healthy
 
   db:
-    build: db/.
+    build: ./db
     ports:
       - "33060:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
