@@ -31,7 +31,6 @@ public class US03_view_all_countries_in_a_region {
 
         List<Country> countries = new ArrayList<>();
 
-        // Sample country data
         countries.add(new Country("CHN", "China", "Asia", "Eastern Asia", 1400000000L, "Peking"));
         countries.add(new Country("JPN", "Japan", "Asia", "Eastern Asia", 125000000L, "Tokyo"));
         countries.add(new Country("MNG", "Mongolia", "Asia", "Eastern Asia", 3400000L, "Ulaanbaatar"));
@@ -51,7 +50,6 @@ public class US03_view_all_countries_in_a_region {
         countries.add(new Country("AUS", "Australia", "Oceania", "Australia and New Zealand", 25600000L, "Canberra"));
         countries.add(new Country("NZL", "New Zealand", "Oceania", "Australia and New Zealand", 5000000L, "Wellington"));
 
-        // Group countries by region
         Map<String, List<Country>> regionMap = new TreeMap<>();
 
         for (Country country : countries) {
@@ -60,7 +58,6 @@ public class US03_view_all_countries_in_a_region {
             ).add(country);
         }
 
-        // Sort population from largest to smallest
         for (List<Country> list : regionMap.values()) {
             list.sort(
                     Comparator.comparingLong(
@@ -69,7 +66,6 @@ public class US03_view_all_countries_in_a_region {
             );
         }
 
-        // Table formatting
         String line = "------------------------------------------------------------------------------------------------------------------------------";
 
         if (countries.isEmpty()) {
@@ -77,7 +73,6 @@ public class US03_view_all_countries_in_a_region {
             return;
         }
 
-        // Display each region
         for (Map.Entry<String, List<Country>> entry : regionMap.entrySet()) {
 
             System.out.println();
