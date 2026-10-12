@@ -52,33 +52,46 @@ public class App {
             }
         }
 
-        if (con == null) {
-            System.err.println(
-                    "Could not connect to the database after 100 attempts."
-            );
-            return;
-        }
+        if (con != null) {
+            try {
+                // Specify the region you want to query
+                String region = "Caribbean";
 
-        try {
-            // Specify the continent you want to query
-            String continent = "Europe";
+                // US19: Capital cities in a region by population
+                ArrayList<CapitalCity> capitalCities = CapitalsCitiesInAregion.getCapitalCitiesByRegion(con, region);
+                CapitalsCitiesInAregion.printReport(capitalCities, region);
 
-            // US18: Capital cities in a continent by population
-            ArrayList<CapitalCity> capitalCities = CapitalCitiesInAcontinent.getCapitalCitiesByContinent(con, continent);
-            CapitalCitiesInAcontinent.printReport(capitalCities, continent);
-        } catch (Exception e) {
-            System.out.println("Error executing capital cities report");
-            e.printStackTrace();
-        }
+                // Close connection
+                con.close();
+                System.out.println("Successfully disconnected from database.");
+            } catch (Exception e) {
+                System.out.println("Error closing connection to database or executing report");
+                e.printStackTrace();
+            }
 
-        try (Connection connection = con) {
-            CountryPopulationReport report =
-                    new CountryPopulationReport(connection);
+            try {
+                // Specify the continent you want to query
+                String continent = "Europe";
 
-            report.run(countryName);
+                // US18: Capital cities in a continent by population
+                ArrayList<CapitalCity> capitalCities = CapitalCitiesInAcontinent.getCapitalCitiesByContinent(con, continent);
+                CapitalCitiesInAcontinent.printReport(capitalCities, continent);
+            } catch (Exception e) {
+                System.out.println("Error executing capital cities report");
+                e.printStackTrace();
+            }
 
-        } catch (SQLException e) {
-            System.err.println("Error closing database connection.");
+            try (Connection connection = con) {
+                CountryPopulationReport report =
+                        new CountryPopulationReport(connection);
+
+                report.run(countryName);
+
+            } catch (SQLException e) {
+                System.err.println("Error closing database connection.");
+            }
+        } else {
+            System.out.println("Failed to establish a database connection.");
         }
     }
 }
