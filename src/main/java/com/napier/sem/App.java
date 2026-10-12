@@ -46,17 +46,34 @@ public class App
             }
         }
 
+
         if (con != null)
         {
             try
             {
-                // Close connection
-                con.close();
+                // Generate the US26 report.
+                TotalWorldPopulation.printReport(con);
             }
-            catch (Exception e)
+            finally
             {
-                System.out.println("Error closing connection to database");
+                // Close the database connection after generating the report.
+                try
+                {
+                    con.close();
+                    System.out.println("Database connection closed.");
+                }
+                catch (SQLException e)
+                {
+                    System.out.println("Error closing connection to database.");
+                    System.out.println(e.getMessage());
+                }
             }
+        }
+        else
+        {
+            System.out.println(
+                    "Unable to generate Total World Population Report: " +
+                            "could not connect to the database.");
         }
     }
 }
