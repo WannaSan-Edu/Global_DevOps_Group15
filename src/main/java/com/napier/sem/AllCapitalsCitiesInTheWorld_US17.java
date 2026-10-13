@@ -2,15 +2,21 @@ package com.napier.sem;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
- - US17: View all capital cities in the world,
- - ordered by population from largest to smallest.
+ * US17: View all capital cities in the world,
+ * ordered by population from largest to smallest.
  */
 public class AllCapitalsCitiesInTheWorld_US17
 {
     public static ArrayList<CapitalCity> getAll(Connection con)
     {
+        /*
+         * JUSTIFICATION (SQL):
+         * - Joins city and country on capital ID to fetch capital name, country name, and population.
+         * - ORDER BY Population DESC meets the core requirement of US17.
+         */
         ArrayList<CapitalCity> capitalCities = new ArrayList<>();
 
         String sql =
@@ -47,21 +53,40 @@ public class AllCapitalsCitiesInTheWorld_US17
     {
         System.out.println("\nUS17: All Capital Cities in the World");
 
-        if (capitalCities == null)
+        if (capitalCities == null || capitalCities.isEmpty())
         {
             System.out.println("No data available");
             return;
         }
 
-        System.out.printf("%-35s %-45s %-12s%n",
-                "Name", "Country", "Population");
+        /*
+         * JUSTIFICATION (Table Formatting):
+         * - 110-character border line matches the unified project layout.
+         * - Left-aligned text columns with truncation and right-aligned Locale.US population numbers.
+         */
+        String line = "-".repeat(110);
+        int count = 0;
+
+        System.out.println(line);
+        System.out.printf(
+                "| %-45s | %-45s | %12s |%n",
+                "Capital City", "Country", "Population"
+        );
+        System.out.println(line);
 
         for (CapitalCity city : capitalCities)
         {
-            System.out.printf("%-35s %-45s %-12d%n",
+            count++;
+            System.out.printf(
+                    Locale.US,
+                    "| %-45.45s | %-45.45s | %,12d |%n",
                     city.getName(),
                     city.getCountry(),
-                    city.getPopulation());
+                    city.getPopulation()
+            );
         }
+
+        System.out.println(line);
+        System.out.println("Capitals displayed: " + count);
     }
 }
