@@ -80,6 +80,10 @@ public class App {
             String countryArg = args.length > 0 ? args[0].trim() : "";
             String districtArg = args.length > 1 ? args[1].trim() : "";
 
+            // US02: Countries grouped by continent.
+            runReport("US02 - Countries Grouped by Continent",
+                    () -> US02_view_all_countries_in_a_continent.printReport(con));
+
             // US03 - View all countries in each region, ordered by population.
             runReport("US03 - View All Countries in a Region",
                     () -> printCountriesByRegion(con));
@@ -364,7 +368,7 @@ public class App {
         } catch (SQLException | RuntimeException e) {
             System.err.println(
                     "Report failed: " + name + " - " + e.getMessage()
-            );
+            ); 
         }
     }
 }
