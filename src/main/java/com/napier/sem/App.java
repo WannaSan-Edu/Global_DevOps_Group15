@@ -74,7 +74,7 @@ public class App {
             runReport("US02 - Countries Grouped by Continent",
                     () -> US02_view_all_countries_in_a_continent.printReport(con));
 
-            // US03: View all countries in each region, ordered by population.
+            // US03 - View all countries in each region, ordered by population.
             runReport("US03 - View All Countries in a Region",
                     () -> printCountriesByRegion(con));
 
