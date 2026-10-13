@@ -1,4 +1,4 @@
-name: A workflow for my App
+name: Develop
 on: push
 
 jobs:
