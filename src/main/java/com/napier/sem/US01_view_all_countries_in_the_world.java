@@ -1,64 +1,53 @@
-
 package com.napier.sem;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Locale;
 
+/**
+ * US01 - View all the countries in the world organised by largest population to smallest.
+ */
 public class US01_view_all_countries_in_the_world {
 
-    static class Country {
-        String name;
-        String continent;
-        String region;
-        long population;
+    public static void printReport(Connection connection) {
+        String sql = "SELECT Name, Continent, Region, Population " +
+                     "FROM `country` " +
+                     "ORDER BY Population DESC";
 
-        Country(String name, String continent,
-                String region, long population) {
-            this.name = name;
-            this.continent = continent;
-            this.region = region;
-            this.population = population;
-        }
-    }
+        String line = "-------------------------------------------------------------------------------------------------";
 
-    public static void main(String[] args) {
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet results = statement.executeQuery()) {
 
-        List<Country> countries = new ArrayList<>();
+            boolean hasCountries = false;
 
-        countries.add(new Country("China", "Asia", "Eastern Asia", 1400000000L));
-        countries.add(new Country("India", "Asia", "Southern and Central Asia", 1380000000L));
-        countries.add(new Country("United States", "North America", "North America", 331000000L));
-        countries.add(new Country("Indonesia", "Asia", "Southeast Asia", 273000000L));
-        countries.add(new Country("Brazil", "South America", "South America", 212000000L));
-        countries.add(new Country("United Kingdom", "Europe", "British Islands", 67000000L));
-        countries.add(new Country("Myanmar", "Asia", "Southeast Asia", 54000000L));
+            System.out.println(line);
+            System.out.printf("| %-25s | %-16s | %-30s | %15s |%n",
+                    "Country Name", "Continent", "Region", "Population");
+            System.out.println(line);
 
-        countries.sort(
-                Comparator.comparingLong(
-                        (Country country) -> country.population
-                ).reversed()
-        );
+            while (results.next()) {
+                hasCountries = true;
+                System.out.printf(
+                        Locale.US,
+                        "| %-25s | %-16s | %-30s | %,15d |%n",
+                        results.getString("Name"),
+                        results.getString("Continent"),
+                        results.getString("Region"),
+                        results.getLong("Population")
+                );
+            }
 
-        String line = "|---------------------------------------------------------------------------------|";
+            System.out.println(line);
 
-        System.out.println(line);
-        System.out.printf("| %-15s | %-14s | %-26s | %15s |%n",
-                "Country Name", "Continent", "Region", "Population");
-        System.out.println(line);
+            if (!hasCountries) {
+                System.out.println("No country data is available.");
+            }
 
-        for (Country country : countries) {
-            System.out.printf("| %-15s | %-14s | %-26s | %,15d |%n",
-                    country.name,
-                    country.continent,
-                    country.region,
-                    country.population);
-        }
-
-        System.out.println(line);
-
-        if (countries.isEmpty()) {
-            System.out.println("No country data is available.");
+        } catch (SQLException e) {
+            System.err.println("Error retrieving countries of the world: " + e.getMessage());
         }
     }
 }
