@@ -5,24 +5,15 @@ import java.sql.*;
 
 public class TopCitiesInContinent {
 
-    public static void main(String[] args) {
-        String url = "jdbc:mysql://localhost:33061/world";
-        String user = "root";
-        String password = "example";
+    public static void generateReport(
+            Connection con, String continent, int n) {
 
-        String continent = args.length > 0 ? args[0] : "Asia";
-        int n = 10;
-
-        if (args.length > 1) {
-            try {
-                n = Integer.parseInt(args[1]);
-            } catch (NumberFormatException e) {
-                System.out.println("N must be a positive whole number.");
-                return;
-            }
+        if (con == null) {
+            System.out.println("Database connection is not available.");
+            return;
         }
 
-        if (n <= 0 || continent.trim().isEmpty()) {
+        if (continent == null || continent.trim().isEmpty() || n <= 0) {
             System.out.println(
                     "Please provide a valid continent and positive N."
             );
@@ -40,11 +31,8 @@ public class TopCitiesInContinent {
                         "ORDER BY ci.Population DESC, ci.Name ASC " +
                         "LIMIT ?";
 
-        try (
-                Connection con =
-                        DriverManager.getConnection(url, user, password);
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setString(1, continent.trim());
             ps.setInt(2, n);
 
@@ -58,10 +46,7 @@ public class TopCitiesInContinent {
 
                 System.out.printf(
                         "%-30s | %-25s | %-25s | %15s%n",
-                        "Name",
-                        "Country",
-                        "District",
-                        "Population"
+                        "Name", "Country", "District", "Population"
                 );
 
                 System.out.println("-".repeat(105));
@@ -85,9 +70,7 @@ public class TopCitiesInContinent {
                             "No cities found for this continent."
                     );
                 } else {
-                    System.out.println(
-                            "\nRows returned: " + count
-                    );
+                    System.out.println("\nRows returned: " + count);
                 }
             }
 
