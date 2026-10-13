@@ -35,7 +35,7 @@ The system provides six categories of reports:
 
 ## 2. Use Case Diagram
 
-![Population Reporting System Use Case Diagram](Use_Case.png)
+![Population Reporting System Use Case Diagram](img/Use_Case.png)
 
 [Open the editable Use Case Diagram](Population_Reporting_System_Use_Case.drawio)
 
