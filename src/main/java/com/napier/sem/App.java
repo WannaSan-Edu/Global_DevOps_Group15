@@ -82,6 +82,12 @@ public class App {
             runReport("US07 - View All Cities in the World",
                     () -> printAllCities(con));
 
+            // US08 - View all cities in a continent
+            runReport("US08 - View All Cities in a Continent", () -> {
+                ViewCitiesinaContinent us08 = new ViewCitiesinaContinent(con);
+                us08.getCitiesInContinent("Asia");
+            });
+
             // US09 - View all cities in a region
             runReport("US09 - View All Cities in a Region", () -> {
                 ViewAllCitiesinaRegion us09 = new ViewAllCitiesinaRegion(con);
