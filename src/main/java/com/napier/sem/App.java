@@ -1,4 +1,3 @@
-
 package com.napier.sem;
 
 import java.sql.Connection;
@@ -85,6 +84,11 @@ public class App {
             String queryArg = args.length > 0
                     ? String.join(" ", args).trim()
                     : "";
+
+            // US02: Countries grouped by continent.
+            runReport("US02 - Countries Grouped by Continent",
+                    () -> US02_view_all_countries_in_a_continent
+                            .printReport(connection));
 
             // US26: Total world population.
             runReport("US26 - Total World Population",
