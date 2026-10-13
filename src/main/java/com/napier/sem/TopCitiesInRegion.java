@@ -3,26 +3,19 @@ package com.napier.sem;
 
 import java.sql.*;
 
-public class TopCitiesInRegion {
-
-    public static void main(String[] args) {
-        String url = "jdbc:mysql://localhost:33061/world";
-        String user = "root";
-        String password = "example";
-
-        String region = args.length > 0 ? args[0] : "Southeast Asia";
-        int n = 10;
-
-        if (args.length > 1) {
-            try {
-                n = Integer.parseInt(args[1]);
-            } catch (NumberFormatException e) {
-                System.out.println("N must be a positive whole number.");
-                return;
-            }
+public class TopCitiesInRegion
+{
+    public static void generateReport(
+            Connection con, String region, int n)
+    {
+        if (con == null)
+        {
+            System.out.println("Database connection is not available.");
+            return;
         }
 
-        if (n <= 0 || region.trim().isEmpty()) {
+        if (region == null || region.trim().isEmpty() || n <= 0)
+        {
             System.out.println(
                     "Please provide a valid region and positive N."
             );
@@ -40,16 +33,13 @@ public class TopCitiesInRegion {
                         "ORDER BY ci.Population DESC, ci.Name ASC " +
                         "LIMIT ?";
 
-        try (
-                Connection con =
-                        DriverManager.getConnection(url, user, password);
-                PreparedStatement ps = con.prepareStatement(sql)
-        ) {
+        try (PreparedStatement ps = con.prepareStatement(sql))
+        {
             ps.setString(1, region.trim());
             ps.setInt(2, n);
 
-            try (ResultSet rs = ps.executeQuery()) {
-
+            try (ResultSet rs = ps.executeQuery())
+            {
                 System.out.println(
                         "\nTOP " + n +
                                 " MOST POPULATED CITIES IN REGION: " +
@@ -68,7 +58,8 @@ public class TopCitiesInRegion {
 
                 int count = 0;
 
-                while (rs.next()) {
+                while (rs.next())
+                {
                     System.out.printf(
                             "%-30s | %-25s | %-25s | %,15d%n",
                             rs.getString("city_name"),
@@ -80,18 +71,20 @@ public class TopCitiesInRegion {
                     count++;
                 }
 
-                if (count == 0) {
+                if (count == 0)
+                {
                     System.out.println(
                             "No cities found for this region."
                     );
-                } else {
-                    System.out.println(
-                            "\nRows returned: " + count
-                    );
+                }
+                else
+                {
+                    System.out.println("\nRows returned: " + count);
                 }
             }
-
-        } catch (SQLException e) {
+        }
+        catch (SQLException e)
+        {
             System.out.println(
                     "Database/report error: " + e.getMessage()
             );

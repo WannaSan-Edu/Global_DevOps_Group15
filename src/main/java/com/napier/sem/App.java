@@ -1,3 +1,4 @@
+
 package com.napier.sem;
 
 import java.sql.*;
@@ -20,29 +21,38 @@ public class App
         // Connection to the database
         Connection con = null;
         int retries = 100;
+
         for (int i = 0; i < retries; ++i)
         {
             System.out.println("Connecting to database...");
+
             try
             {
-                // Wait a bit for db to start
+                // Wait for database to start
                 Thread.sleep(1000);
+
                 // Connect to database
-                con = DriverManager.getConnection("jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true", "root", "example");
+                con = DriverManager.getConnection(
+                        "jdbc:mysql://db:3306/world?useSSL=false&allowPublicKeyRetrieval=true",
+                        "root",
+                        "example"
+                );
+
                 System.out.println("Successfully connected");
-                // Wait a bit
-                Thread.sleep(1000);
-                // Exit for loop
                 break;
             }
             catch (SQLException sqle)
             {
-                System.out.println("Failed to connect to database attempt " + Integer.toString(i));
+                System.out.println(
+                        "Failed to connect to database attempt " + (i + 1)
+                );
                 System.out.println(sqle.getMessage());
             }
             catch (InterruptedException ie)
             {
-                System.out.println("Thread interrupted? Should not happen.");
+                Thread.currentThread().interrupt();
+                System.out.println("Database connection interrupted.");
+                return;
             }
         }
 
@@ -50,13 +60,29 @@ public class App
         {
             try
             {
-                // Close connection
-                con.close();
+                // Generate Top Cities in Region report
+                TopCitiesInRegion.generateReport(
+                        con, "Southeast Asia", 10
+                );
             }
-            catch (Exception e)
+            finally
             {
-                System.out.println("Error closing connection to database");
+                try
+                {
+                    // Close connection
+                    con.close();
+                }
+                catch (SQLException e)
+                {
+                    System.out.println(
+                            "Error closing connection to database"
+                    );
+                }
             }
+        }
+        else
+        {
+            System.out.println("Could not connect to database.");
         }
     }
 }
