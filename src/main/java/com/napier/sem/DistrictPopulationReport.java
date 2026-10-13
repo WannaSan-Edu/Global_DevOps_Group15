@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class DistrictPopulationReport {
 
@@ -105,14 +106,22 @@ public class DistrictPopulationReport {
             return;
         }
 
+        String line = "-".repeat(80);
+
         System.out.println("\nDistrict Population Report");
-        System.out.println("==========================");
-
-        System.out.printf("%-30s %20s%n",
-                "District", "Total Population");
-
-        System.out.printf("%-30s %,20d%n",
-                pop.getName(), pop.getTotal());
+        System.out.println(line);
+        System.out.printf(
+                "| %-50s | %20s |%n",
+                "District", "Total Population"
+        );
+        System.out.println(line);
+        System.out.printf(
+                Locale.US,
+                "| %-50.50s | %,20d |%n",
+                pop.getName(),
+                pop.getTotal()
+        );
+        System.out.println(line);
     }
 
     /**
@@ -125,16 +134,29 @@ public class DistrictPopulationReport {
             return;
         }
 
-        System.out.println("\nAll Districts Population Report");
-        System.out.println("===============================");
+        String line = "-".repeat(80);
+        int count = 0;
 
-        System.out.printf("%-45s %20s%n",
-                "District", "Total Population");
+        System.out.println("\nAll Districts Population Report");
+        System.out.println(line);
+        System.out.printf(
+                "| %-50s | %20s |%n",
+                "District", "Total Population"
+        );
+        System.out.println(line);
 
         for (Population pop : pops) {
-            System.out.printf("%-45s %,20d%n",
-                    pop.getName(), pop.getTotal());
+            count++;
+            System.out.printf(
+                    Locale.US,
+                    "| %-50.50s | %,20d |%n",
+                    pop.getName(),
+                    pop.getTotal()
+            );
         }
+
+        System.out.println(line);
+        System.out.println("Districts displayed: " + count);
     }
 
     /**

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class CountryPopulationReport {
 
@@ -104,15 +105,22 @@ public class CountryPopulationReport {
             return;
         }
 
-        System.out.println("\nCountry Population Report");
-        System.out.println("=========================");
+        String line = "-".repeat(80);
 
-        System.out.printf("%-30s %20s%n", "Country", "Total Population");
+        System.out.println("\nCountry Population Report");
+        System.out.println(line);
         System.out.printf(
-                "%-30s %,20d%n",
+                "| %-50s | %20s |%n",
+                "Country", "Total Population"
+        );
+        System.out.println(line);
+        System.out.printf(
+                Locale.US,
+                "| %-50.50s | %,20d |%n",
                 pop.getName(),
                 pop.getTotal()
         );
+        System.out.println(line);
     }
 
     /**
@@ -125,17 +133,29 @@ public class CountryPopulationReport {
             return;
         }
 
+        String line = "-".repeat(80);
+        int count = 0;
+
         System.out.println("\nAll Countries Population Report");
-        System.out.println("===============================");
-        System.out.printf("%-45s %20s%n", "Country", "Total Population");
+        System.out.println(line);
+        System.out.printf(
+                "| %-50s | %20s |%n",
+                "Country", "Total Population"
+        );
+        System.out.println(line);
 
         for (Population pop : pops) {
+            count++;
             System.out.printf(
-                    "%-45s %,20d%n",
+                    Locale.US,
+                    "| %-50.50s | %,20d |%n",
                     pop.getName(),
                     pop.getTotal()
             );
         }
+
+        System.out.println(line);
+        System.out.println("Countries displayed: " + count);
     }
 
     /**
