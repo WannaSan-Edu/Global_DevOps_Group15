@@ -81,16 +81,16 @@ public class App {
             String districtArg = args.length > 1 ? args[1].trim() : "";
 
             // US03 - View all countries in each region, ordered by population.
-            // The existing US03 class uses hard-coded example data, so this
-            // report queries the connected database instead.
             runReport("US03 - View All Countries in a Region",
                     () -> printCountriesByRegion(con));
 
             // US07 - View all cities in the world.
-            // The uploaded project does not contain a ViewAllCitiesInTheWorld
-            // class, so this report is implemented here using the City model.
             runReport("US07 - View All Cities in the World",
                     () -> printAllCities(con));
+
+            // US15 - Top Populated Cities in a Country
+            runReport("US15 - Top Populated Cities in a Country",
+                    () -> TopCitiesInCountry.generateReport(con, "Japan", 10));
 
             // US17 - View all capital cities in the world.
             runReport("US17 - All Capital Cities in the World", () -> {
