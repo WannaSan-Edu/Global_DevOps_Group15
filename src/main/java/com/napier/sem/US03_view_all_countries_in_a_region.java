@@ -12,14 +12,21 @@ import java.util.Locale;
 public class US03_view_all_countries_in_a_region {
 
     public static void printReport(Connection connection) {
+        /*
+         * JUSTIFICATION (SQL):
+         * - Joins country with city to get capital name, ordered by region ASC and population DESC.
+         */
         String sql = "SELECT c.Code, c.Name, c.Continent, c.Region, "
                 + "c.Population, capital.Name AS Capital "
                 + "FROM country c "
                 + "LEFT JOIN city capital ON c.Capital = capital.ID "
                 + "ORDER BY c.Region ASC, c.Population DESC, c.Name ASC";
 
-        // Exactly 130 characters to match the table row format length precisely
-        String line = "-".repeat(130);
+        /*
+         * JUSTIFICATION (Border):
+         * - 150 characters width to accommodate code, wide country name, continent, region, population, capital.
+         */
+        String line = "-".repeat(150);
         String currentRegion = null;
         int count = 0;
 
@@ -41,7 +48,7 @@ public class US03_view_all_countries_in_a_region {
                     System.out.println("Region: " + currentRegion);
                     System.out.println(line);
                     System.out.printf(
-                            "| %-6s | %-24s | %-18s | %-28s | %15s | %-20s |%n",
+                            "| %-6s | %-48s | %-18s | %-28s | %15s | %-20s |%n",
                             "Code", "Country", "Continent", "Region",
                             "Population", "Capital"
                     );
@@ -54,9 +61,13 @@ public class US03_view_all_countries_in_a_region {
                     capital = "Unknown";
                 }
 
+                /*
+                 * JUSTIFICATION (Formatting):
+                 * - %-48.48s ensures long country names fit without overflowing borders.
+                 */
                 System.out.printf(
                         Locale.US,
-                        "| %-6s | %-24.24s | %-18.18s | %-28.28s | %,15d | %-20.20s |%n",
+                        "| %-6s | %-48.48s | %-18.18s | %-28.28s | %,15d | %-20.20s |%n",
                         rs.getString("Code"),
                         rs.getString("Name"),
                         rs.getString("Continent"),
