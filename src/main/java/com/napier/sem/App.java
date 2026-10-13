@@ -88,6 +88,10 @@ public class App {
             runReport("US07 - View All Cities in the World",
                     () -> printAllCities(con));
 
+            // US13 - Top Populated Cities in a Continent
+            runReport("US13 - Top Populated Cities in a Continent",
+                    () -> TopCitiesInContinent.generateReport(con, "Asia", 10));
+
             // US14 - Top Populated Cities in a Region
             runReport("US14 - Top Populated Cities in a Region",
                     () -> TopCitiesInRegion.generateReport(con, "Southeast Asia", 10));
