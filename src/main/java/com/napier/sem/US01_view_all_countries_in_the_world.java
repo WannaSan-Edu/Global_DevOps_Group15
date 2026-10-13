@@ -16,23 +16,25 @@ public class US01_view_all_countries_in_the_world {
                      "FROM `country` " +
                      "ORDER BY Population DESC";
 
-        String line = "-------------------------------------------------------------------------------------------------";
+        // Exactly 110 characters to match the table row format length precisely
+        String line = "-".repeat(110);
+        int count = 0;
+
+        System.out.println(line);
+        System.out.printf(
+                "| %-32s | %-20s | %-30s | %15s |%n",
+                "Country Name", "Continent", "Region", "Population"
+        );
+        System.out.println(line);
 
         try (PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet results = statement.executeQuery()) {
 
-            boolean hasCountries = false;
-
-            System.out.println(line);
-            System.out.printf("| %-25s | %-16s | %-30s | %15s |%n",
-                    "Country Name", "Continent", "Region", "Population");
-            System.out.println(line);
-
             while (results.next()) {
-                hasCountries = true;
+                count++;
                 System.out.printf(
                         Locale.US,
-                        "| %-25s | %-16s | %-30s | %,15d |%n",
+                        "| %-32.32s | %-20.20s | %-30.30s | %,15d |%n",
                         results.getString("Name"),
                         results.getString("Continent"),
                         results.getString("Region"),
@@ -41,9 +43,10 @@ public class US01_view_all_countries_in_the_world {
             }
 
             System.out.println(line);
-
-            if (!hasCountries) {
+            if (count == 0) {
                 System.out.println("No country data is available.");
+            } else {
+                System.out.println("Countries displayed: " + count);
             }
 
         } catch (SQLException e) {
