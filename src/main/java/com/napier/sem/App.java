@@ -82,6 +82,12 @@ public class App {
             runReport("US07 - View All Cities in the World",
                     () -> printAllCities(con));
 
+            // US09 - View all cities in a region
+            runReport("US09 - View All Cities in a Region", () -> {
+                ViewAllCitiesinaRegion us09 = new ViewAllCitiesinaRegion(con);
+                us09.getCitiesInRegion("Southeast Asia");
+            });
+
             // US13: Top Populated Cities in a Continent
             runReport("US13 - Top Populated Cities in a Continent",
                     () -> TopCitiesInContinent.generateReport(con, "Asia", 10));
