@@ -1,108 +1,295 @@
+
 package com.napier.sem;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class App {
 
+    private static final int MAX_ATTEMPTS = 100;
+    private static final long RETRY_DELAY_MS = 3000;
+
     public static void main(String[] args) {
-        // 1. Load MySQL JDBC driver
+
+        // Load the MySQL JDBC driver.
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
-            System.err.println("Could not load MySQL JDBC driver.");
+            System.err.println(
+                    "ERROR: MySQL JDBC driver was not found. " +
+                            "Check your pom.xml dependencies."
+            );
             return;
         }
 
-        // 2. Optional command-line argument for filtering (e.g., country or district name)
-        String queryArg = args.length > 0 ? String.join(" ", args).trim() : "";
-
-        // 3. Database configuration via environment variables with fallback defaults
-        String dbUrl = System.getenv().getOrDefault(
-                "DB_URL",
-                "jdbc:mysql://localhost:33060/world?useSSL=false&allowPublicKeyRetrieval=true"
+        // Configure the database connection.
+        // Docker Compose sets DB_HOST=db:3306.
+        // For running directly on Windows, the default is localhost:33060.
+        String dbHost = System.getenv().getOrDefault(
+                "DB_HOST", "localhost:33060"
         );
-        String dbUser = System.getenv().getOrDefault("DB_USER", "root");
-        String dbPassword = System.getenv().getOrDefault("DB_PASSWORD", "example");
 
-        Connection con = null;
+        String dbUrl = System.getenv("DB_URL");
 
-        // 4. Retry loop to handle database container startup delay
-        int maxAttempts = 100;
-        for (int i = 0; i < maxAttempts; i++) {
-            System.out.println("Connecting to database (attempt " + (i + 1) + "/" + maxAttempts + ")...");
-            try {
-                con = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-                System.out.println("Successfully connected to the database.");
-                break;
-            } catch (SQLException e) {
-                System.err.println("Database connection attempt " + (i + 1) + " failed: " + e.getMessage());
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    System.err.println("Database connection was interrupted.");
-                    return;
-                }
-            }
+        if (dbUrl == null || dbUrl.isBlank()) {
+            dbUrl = "jdbc:mysql://" + dbHost + "/world"
+                    + "?useSSL=false"
+                    + "&allowPublicKeyRetrieval=true"
+                    + "&connectTimeout=5000"
+                    + "&socketTimeout=30000";
         }
+
+        String dbUser = System.getenv().getOrDefault(
+                "DB_USER", "root"
+        );
+
+        String dbPassword = System.getenv().getOrDefault(
+                "DB_PASSWORD", "example"
+        );
+
+        System.out.println("Starting Global DevOps application...");
+        System.out.println("Database URL: " + dbUrl);
+
+        // Connect to MySQL with retries.
+        Connection con = connectToDatabase(
+                dbUrl, dbUser, dbPassword
+        );
 
         if (con == null) {
-            System.err.println("Could not connect to the database after " + maxAttempts + " attempts.");
+            System.err.println(
+                    "ERROR: Could not connect to MySQL. " +
+                            "Check the database container, credentials, " +
+                            "database initialization and network configuration."
+            );
             return;
         }
 
-        // 5. Execute all reports sequentially using the shared connection
-        try {
-            // Report 1: Total World Population (US26)
-            System.out.println("\n--- Running Total World Population Report (US26) ---");
-            TotalWorldPopulation.printReport(con);
+        try (Connection connection = con) {
 
-            // Report 2: All Capital Cities in the World (US17)
-            System.out.println("\n--- Running All Capital Cities in the World Report (US17) ---");
-            ArrayList<CapitalCity> allCapitalCities = AllCapitalsCitiesInTheWorld_US17.getAll(con);
-            AllCapitalsCitiesInTheWorld_US17.printReport(allCapitalCities);
+            System.out.println(
+                    "Database connection established successfully."
+            );
 
-            // Report 3: Capital Cities in a Continent by Population (US18)
-            System.out.println("\n--- Running Capital Cities in Europe by Population Report (US18) ---");
-            String continent = "Europe";
-            ArrayList<CapitalCity> continentCapitals = CapitalCitiesInAcontinent.getCapitalCitiesByContinent(con, continent);
-            CapitalCitiesInAcontinent.printReport(continentCapitals, continent);
-
-            // Report 4: Capital Cities in a Region by Population (US19)
-            System.out.println("\n--- Running Capital Cities in Caribbean by Population Report (US19) ---");
-            String region = "Caribbean";
-            ArrayList<CapitalCity> regionCapitals = CapitalsCitiesInAregion.getCapitalCitiesByRegion(con, region);
-            CapitalsCitiesInAregion.printReport(regionCapitals, region);
-
-            // Report 5: Population by Country (US25)
-            System.out.println("\n--- Running Population by Country Report (US25) ---");
-            ArrayList<Population> countryPopulations = ViewPopulationByCountry.getPopulationByCountry(con);
-            ViewPopulationByCountry.printReport(countryPopulations);
-
-            // Report 6: Country Population Report
-            System.out.println("\n--- Running Country Population Report ---");
-            CountryPopulationReport countryReport = new CountryPopulationReport(con);
-            countryReport.run(queryArg);
-
-            // Report 7: District Population Report
-            System.out.println("\n--- Running District Population Report ---");
-            DistrictPopulationReport districtReport = new DistrictPopulationReport(con);
-            districtReport.run(queryArg);
-
-        } catch (Exception e) {
-            System.err.println("An error occurred while executing reports:");
-            e.printStackTrace();
-        } finally {
-            // 6. Gracefully close the shared database connection once ALL reports have finished
-            try {
-                if (con != null && !con.isClosed()) {
-                    con.close();
-                    System.out.println("\nDatabase connection closed successfully.");
-                }
-            } catch (SQLException e) {
-                System.err.println("Error closing database connection: " + e.getMessage());
+            // Check that the expected database and tables are available.
+            if (!isDatabaseReady(connection)) {
+                System.err.println(
+                        "ERROR: The world database or its required " +
+                                "tables are unavailable."
+                );
+                return;
             }
+
+            // Optional argument used by the country and district reports.
+            String queryArg = args.length > 0
+                    ? String.join(" ", args).trim()
+                    : "";
+
+            // US26: Total world population.
+            runReport("US26 - Total World Population",
+                    () -> TotalWorldPopulation.printReport(connection));
+
+            // US17: Capital cities throughout the world.
+            runReport("US17 - All Capital Cities",
+                    () -> {
+                        ArrayList<CapitalCity> capitals =
+                                AllCapitalsCitiesInTheWorld_US17
+                                        .getAll(connection);
+
+                        AllCapitalsCitiesInTheWorld_US17
+                                .printReport(capitals);
+                    });
+
+            // US18: Capital cities in Europe.
+            runReport("US18 - Capital Cities by Continent",
+                    () -> {
+                        String continent = "Europe";
+
+                        ArrayList<CapitalCity> capitals =
+                                CapitalCitiesInAcontinent
+                                        .getCapitalCitiesByContinent(
+                                                connection, continent
+                                        );
+
+                        CapitalCitiesInAcontinent
+                                .printReport(capitals, continent);
+                    });
+
+            // US19: Capital cities in the Caribbean region.
+            runReport("US19 - Capital Cities by Region",
+                    () -> {
+                        String region = "Caribbean";
+
+                        ArrayList<CapitalCity> capitals =
+                                CapitalsCitiesInAregion
+                                        .getCapitalCitiesByRegion(
+                                                connection, region
+                                        );
+
+                        CapitalsCitiesInAregion
+                                .printReport(capitals, region);
+                    });
+
+            // US25: Population distribution by country.
+            runReport("US25 - Population by Country",
+                    () -> {
+                        ArrayList<Population> populations =
+                                ViewPopulationByCountry
+                                        .getPopulationByCountry(connection);
+
+                        ViewPopulationByCountry
+                                .printReport(populations);
+                    });
+
+            // Country population report.
+            runReport("Country Population Report",
+                    () -> {
+                        CountryPopulationReport report =
+                                new CountryPopulationReport(connection);
+
+                        report.run(queryArg);
+                    });
+
+            // District population report.
+            runReport("District Population Report",
+                    () -> {
+                        DistrictPopulationReport report =
+                                new DistrictPopulationReport(connection);
+
+                        report.run(queryArg);
+                    });
+
+            System.out.println(
+                    "\nAll configured reports have finished."
+            );
+
+        } catch (SQLException e) {
+            System.err.println(
+                    "ERROR while closing the database connection: "
+                            + e.getMessage()
+            );
+        }
+    }
+
+    /**
+     * Establishes a database connection, retrying while MySQL starts.
+     */
+    private static Connection connectToDatabase(
+            String dbUrl,
+            String dbUser,
+            String dbPassword) {
+
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+
+            System.out.println(
+                    "Connecting to MySQL (attempt "
+                            + attempt + "/" + MAX_ATTEMPTS + ")..."
+            );
+
+            try {
+                Connection connection = DriverManager.getConnection(
+                        dbUrl, dbUser, dbPassword
+                );
+
+                System.out.println("Connected to MySQL.");
+                return connection;
+
+            } catch (SQLException e) {
+
+                System.err.println(
+                        "Connection failed: " + e.getMessage()
+                );
+
+                if (attempt == MAX_ATTEMPTS) {
+                    break;
+                }
+
+                try {
+                    Thread.sleep(RETRY_DELAY_MS);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+
+                    System.err.println(
+                            "Database connection retries were interrupted."
+                    );
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks whether the world database contains the required tables.
+     */
+    private static boolean isDatabaseReady(Connection connection) {
+
+        String[] requiredTables = {
+                "country", "city", "countrylanguage"
+        };
+
+        try {
+            for (String table : requiredTables) {
+                if (!tableExists(connection, table)) {
+                    System.err.println(
+                            "Missing required table: " + table
+                    );
+                    return false;
+                }
+            }
+
+            System.out.println(
+                    "Database check passed: required tables exist."
+            );
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println(
+                    "Could not validate database tables: "
+                            + e.getMessage()
+            );
+            return false;
+        }
+    }
+
+    private static boolean tableExists(
+            Connection connection, String tableName)
+            throws SQLException {
+
+        String sql =
+                "SELECT COUNT(*) FROM information_schema.tables "
+                        + "WHERE table_schema = DATABASE() "
+                        + "AND table_name = ?";
+
+        try (var statement = connection.prepareStatement(sql)) {
+            statement.setString(1, tableName);
+
+            try (var results = statement.executeQuery()) {
+                return results.next() && results.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Runs one report without preventing later reports from running
+     * if an unexpected runtime exception occurs.
+     */
+    private static void runReport(String name, Runnable report) {
+
+        System.out.println("\n========================================");
+        System.out.println("Running: " + name);
+        System.out.println("========================================");
+
+        try {
+            report.run();
+        } catch (RuntimeException e) {
+            System.err.println(
+                    "Report failed: " + name
+                            + " - " + e.getMessage()
+            );
+            e.printStackTrace();
         }
     }
 }
