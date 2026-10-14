@@ -1,4 +1,4 @@
-# Global_Deveps_Group15
+# Global_DevOps_Group15
 
 ## Build Status
 
