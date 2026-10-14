@@ -1,4 +1,4 @@
 FROM eclipse-temurin:25
-COPY ./target/woldReport.jar /tmp/
+COPY ./target/semApp.jar /tmp/
 WORKDIR /tmp
-ENTRYPOINT ["java", "-jar", "worldReport.jar"]
+ENTRYPOINT ["java", "-jar", "semApp.jar"]
